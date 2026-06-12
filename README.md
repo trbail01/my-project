@@ -1,7 +1,4 @@
 # my-project
+Used for https://drive.google.com/drive/folders/1rFJk7yAGeOkvBqvcqOLN7NFS4kwNnMZ0
 
-Project for Posit Cloud
-
-Added from terminal
-
-Another add but from RStudio
+using RStudio
