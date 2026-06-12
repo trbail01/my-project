@@ -1,0 +1,563 @@
+---
+title: "Lab 9: Correlation and Introduction to Simple Linear Regression"
+author: "KEY"
+format: html
+embed-resources: true
+html-math-method: mathml
+execute: 
+  warning: false
+  echo: true
+  error: false
+---
+
+<span style='color:#000000;background:#ffc0cb;'>
+Be sure to tell them which questions are graded in each section.  </span>
+
+
+## Before you start:
+
+1. Complete the Lab Primer linked in Canvas.  
+2. Be sure you have opened the `lab9-intro-two-quant-student.Rproj` file.  
+3. Change the name of the **QMD** file only to your last name, first initial, e.g., `OtterM-lab9-intro-two-quant-student.qmd`. You will have to close the QMD document to rename the file. 
+4. Change the "NAME" above after `author:` to your name, leaving it in quotes: "Monte Otter" 
+
+
+## Skills
+* Given a study, distinguish between explanatory and response variables
+* Given a set of raw data, make a scatterplot or regression output using R
+* Given a set of raw data, be able to calculate correlation
+* Be able to use correlation to identify the strength and direction of a linear association
+* Given a scatterplot, identify patterns such as positive and negative associations
+* Given standard regression output, identify and utilize key parts of the output (estimated slope, intercept)
+
+These skills incorporate LTs 17 and R LTs R8, R9, and R10.
+
+
+*Tip: putting two spaces after a line forces the next line in your Quarto document to also be a new line in your knitted document.*
+
+*Tip: equations in will ignore any attempt to include spaces, unless you insert a `~` inside the equation where you want the space.* For example, in our BAC-Beers problem from class (hover your mouse over each formula to see what it would knit like): $x_{number of beers}$ versus $x_{number~of~beers}$
+
+*Tip: If you want to test out two lines of code, such as for a plot (such as you've seen previously with piped functions), you have to run them **together**, not one at a time.*
+
+Here are some symbols that you might find useful: 
+
+$\hat{y}$
+
+$\hat{y}_{word}$ 
+
+$x_{word}$  
+
+$\beta_{word}$  
+
+
+**Reminder:** Before you start the lab, add the code that will load any other packages you might need into this code chunk.
+
+```{r}
+#| label: setup
+#| include: false
+library(tidyverse)
+library(ggformula)
+library(mosaic)
+```
+
+<span style='color:#000000;background:#8FBC8B;'>
+<strong>Feedback given on the following questions:</strong> 1.2, 1.5, 1.9, 1.10, 1.13     
+<em>You are welcome to bring questions checked for completeness to office hours for individual feedback</em></span>
+
+## Scenario 1: Brain Weight in Healthy Adults  
+
+A study published in 1905 had the goal of predicting the approximate weight of the human brain in healthy adults and theorized that the size of the head would be a good predictor. The researchers at Middlesex teaching Hospital decided to focus on post-mortem patients who had suffered accidental deaths, as a reasonable way to collect the data for the population of healthy adults. Over the period of three years, they randomly selected post-mortem patients and for each case, measured first the head size (cm^3^) and then took out the brain and weighed it (in grams). The researchers defined the size of the head as the product of the three principal diameters of the head. Additionally, the patients’ sex (male or female) and age group (20-46 or 46+) was recorded. The data is in `brain-head.csv`.  
+*Source: R.J. Gladstone (1905). "A Study of the Relations of the Brain to to the Size of the Head", Biometrika, Vol. 4, pp105-123*
+
+
+### 1.1.
+
+Name the response and explanatory variables of interest and, for each, state the type of variable (quantitative or qualitative).
+
+> Response: Brain weight (grams); quantitative
+> Explanatory: Head size (cm^3^); quantitative
+
+### 1.2.
+
+What type of study is this (observational or experimental)? Justify your answer in the context of the study.
+
+> Observational; the researchers did not randomly assign / observed the inherent head size of each patient.  
+
+<span style='color:#000000;background:#fdffcc;'>
+**LEGEND:**
+x: head size  
+y: brain weight  
+population: healthy adults  
+</span> 
+
+
+<p style="color:#000000;background:#fcd283;">
+***5 POINTS:***  
+**1 point: Observational**  
+....if identifies as experiment, total score = 1 point  
+**3 points: justify about the EXPLANATORY NOT randomized to each CASE**  
+....3 points: justification about the value of the explanatory for each case were NOT randomly assigned/randomized OR that measured inherent/natural state for each case  
+....2.5 points: missing to case  
+....1.5 points: include other non-relevant aspects to study type (n, random sampling, or manipulation etc)  
+....1 point: generic "no randomization of treatment", without which variable the treatment is (explanatory)  
+....1 point: not randomized, but answer includes response variable also  
+....0.5 point: missing which variable not randomly assigned/measured inherent value  
+....0.5 points: write something about both no manipulation and no random assignment (generic)       
+....0 point: written only about response variable  
+....0 point: generic 'lack of manipulation' without specific type or 'simply observing'  
+....0 point: written with no identification of the 'variable' in question  
+**1 points: in context**  
+....1 point if full context of explanatory and case: head size, healthy adult/post-mortem patient  
+....0.5 points if missing case context  
+....0 if missing
+</p>
+
+<font size = "2">
+<p style="color:#000000;background-color:#fdffcc;">
+<em><strong> Potential Feedback:</em></strong>  
+**Conceptual Errors**  
+- Review each study type and the defining feature of each from pages 5-3 to 5-5.  
+- 'Simply observing' is not a specific enough answer. We observe all measurements.  
+- The lack of generic 'manipulations' is not a distinguishing characteristic between study types.  
+- 'brain weight' is not the variable that the inherent value determines the study type. Response values are always measured as the inherent value.  
+- Need to include which variable is the "treatment."  
+- The response variable is not randomized.  
+- Random sampling is not the same as randomization  
+- Randomly selecting cases into your sample is not the randomness needed to determine study type; we can have random or non random samples in either study type.  
+**Small Errors**  
+- The key here is that they measure the inherent values of *cases*.  
+- Be sure to write answers with full context.  
+</p>
+</font>
+
+
+### 1.3.
+
+Exploratory Data Analysis: Insert a code chunk below to create an appropriate graphic and calculate any appropriate summary statistics. Modify the plot so that the y axis spans from 900 to 1800 grams.  
+
+*Inserted code chunk*
+
+```{r}
+#| label: brain-scatterplot-correlation
+
+braindat <- read_csv("brain-head.csv", show_col_types = FALSE)
+
+gf_point(BrainWeight~HeadSize, data = braindat, 
+         xlab="Head Size (cm^3)", 
+         ylab="Brain Weight (g) of Healthy Adults") |>
+  gf_lims(y=c(900, 1800))
+
+cor(BrainWeight ~ HeadSize, data = braindat, use = "complete")
+
+```
+
+<span style='color:#000000;background:#c0caff;'>
+<strong>Feedback for all students:</strong>
+Refer to page 8-3 for the arguments to supply to `gf_point()` and how to used `gf_lims()` to include an axis modification. Refer to page 8-7 for the code to calculate correlation.  
+</span>
+
+### 1.4.
+
+What is the simplest form (linear, nonlinear, etc) of the relationship between the brain weight and head size of healthy adults?
+
+> Linear.
+
+### 1.5.
+
+What is the strength and direction of the linear relationship? Cite your evidence. (You may want to refer to 1.3 / use your best evidence)
+
+> r = 0.7996 There is a strong positive linear relationship.
+
+<p style="color:#000000;background:#fcd283;">
+***5 POINTS:***  
+**2 point: evidence**  
+....2 points for correlation cited  
+....0 points if missing  
+**1 points: direction**  
+....1 points if positive  
+....0 points if other: negative  
+....0 points if missing  
+**1 points: assessment of strength**  
+....1 points if strong  
+....0.5 points if moderate  
+....0 points if other: weak, etc.  
+....0 points if missing  
+**1 point: linear relationship/association**  
+....1 point if linear  
+....0.5 points if something that implies linear, but isn't quite right  
+....0 points if missing  
+</p>
+
+
+<font size = "2">
+
+<p style="color:#000000;background:#fdffcc;">
+<em><strong> Potential Feedback:</em></strong> 
+**Conceptual Errors**  
+- Remember to identify the relationship as **linear**  
+- Incorrect direction  
+- Needs to be based on a calculated value, not a visual guess  
+- Incorrect strength; strength increases as correlation approaches \|1\|.  
+- Correlation has no inherent "strength." You have to evaluate what strength that correlation value has, verbally.  
+- The correlation does not provide "evidence" of a relationship, it is just a measure of the strength of relationship.  
+- The statistics in df_stats() are not appropriate statistics to describe the relationship between 2 numeric variables; it treats one of those as categorical. There is only one descriptive statistic for 2 numeric variables.  
+- You should always cite the evidence you used (r)!  
+**Small Errors**  
+- According to the scale for this class, this correlation would be strong (refer to page 8-5).
+</p>
+
+</font>
+
+### 1.6.
+
+Create a scatterplot of the data, including both the axis modification and the estimated linear model on the plot.
+
+*Inserted code chunk*
+```{r}
+#| label: lm-plot
+
+gf_point(BrainWeight~HeadSize, data = braindat, 
+         xlab="Head Size (cm^3)", 
+         ylab="Brain Weight (g) of Healthy Adults") |>
+  gf_lims(y=c(900, 1800)) |>
+  gf_lm(BrainWeight ~ HeadSize, data = braindat, col = 1)
+```
+
+<span style='color:#000000;background:#c0caff;'>
+<strong>Feedback for all students:</strong>  
+Remember to plot your scatterplot using response ~ explanatory in that order, and to include both the full specific variables measured (brain weight (g) and head size (cm^3^) and the full population (healthy adults) in the axis labels
+</span>  
+
+
+
+### 1.7.
+
+Create your linear model. Then, write the code below to print out the coefficients for your estimates of slope and intercept of your linear model between between the brain weight and head size and write them below.
+
+*Inserted code chunk*
+```{r}
+#| label: lm-coef
+#switched.lm <- lm(HeadSize ~ BrainWeight, data = braindat) 
+#coef(switched.lm)
+
+brain.lm <- lm(BrainWeight ~ HeadSize, data = braindat) 
+coef(brain.lm)
+
+```
+
+> $b_0$ = 325.5734210  
+> $b_1$ = 0.2634293  
+
+<span style='color:#000000;background:#c0caff;'>
+<strong>Feedback for all students:</strong>  
+Refer to page 9-6 for how to use `lm()` to create the linear model and `coef()` to print the intercept and slope.  
+</span> 
+
+
+### 1.8.
+
+Write the equation for your estimate of the linear model between brain weight and head size. Use the appropriate formatting for symbols.
+
+> $\hat{y}_{brain~weight} = 325.5734 + 0.2634 \cdot x_{head~size}$  
+
+
+
+### 1.9.
+
+Interpret the slope of the linear model, in context.
+
+> When the **head size** increases by *1 cm^3^* in *in healthy adults*, the **brain weight** *is expected* to **increase** by **0.2634 g**.
+
+
+<span style='color:#000000;background:#fdffcc;'>
+**LEGEND:**
+x: head size  
+y: brain weight  
+population: healthy adults  
+</span> 
+
+<p style="color:#000000;background:#fcd283;">
+***5 POINTS:***  
+**3 points: interpretation**  
+....3 points if altogether what slope means  
+............as x increases by 1, y changes by b1  
+....2.5 points if they round slope too much (e.g. 0.3)  
+....1.5 points if missing *is expected to*  
+............might also say: on average, predicted  
+....1.5 points if leave off amount x increases by (1)    
+....0.5 points if flipped x & y / flip b0 & b1  
+....1 point TOTAL if only describes positive relationship, no interpretation of actual b1 value  
+**2 points: context of variables & population**  
+....2 points if full context of population & x,y with units  
+....1.5 points if missing units  
+....1 point if missing population  
+....0 points if missing more than one part  
+</p>
+
+
+<font size = "2">
+
+<p style="color:#000000;background:#fdffcc;">
+<em><strong> Potential Feedback:</em></strong>  
+**Conceptual Errors**  
+- Need to adjust the direction based on the sign of the value  
+- Missing "expected"; it is not true that the value decreases by exactly this much between cases.  
+- Context of X and Y flipped, so this is not what slope measures  
+- Need to state the amount X increases by for Y to be expected to increase by the slope amount.  
+- This is not an interpretation of the full value of slope; it just interprets the sign, not the magnitude. Refer to your class notes (example on page 9-4 or Appendix 12.17) for how to write a complete interpretation of slope.  
+**Small Errors**  
+- Missing units  
+- You should always include context of the population  
+</p>
+
+</font>
+
+### 1.10.
+
+First interpret the intercept of the linear model, in context (provide the mathematical interpretation, whether it makes sense or not practically). Then, explain whether this interpretation is practical.
+
+> When the **head size** is *0 cm^3^*,  the **brain weight** *of healthy adults* is *expected to* be **325.5734** *grams*. However, this interpretation is not practical because a human cannot have a brain size of 0 cm^3^.   
+
+> S26 template: **325.5734** *grams* is the *expected* value of **brain weight** *of healthy adults* when **head size** is *0 cm^3^*  
+
+
+
+<span style='color:#000000;background:#fdffcc;'>
+**LEGEND:**
+x: head size  
+y: brain weight  
+population: healthy adults  
+</span> 
+
+<p style="color:#000000;background:#fcd283;">  
+***5 POINTS:***  
+**3 points: interpretation**  
+....3 points if altogether what intercept means  
+............if x = 0 then y = b0  
+............(expected) value of y when x = 0  
+....2 points if missing *is expected to be*  
+............might also say: on average, predicted  
+....1.5 points if leave off value of x (0) or y (b0)   
+....0.5 points if flipped x & y or flip b0 & b1  
+**2 points: context of variables & population**  
+....2 points if full context of population & x,y with units  
+....1.5 points if missing units  
+....1 point if missing population  
+....0 points if missing more than one part  
+</p>
+
+<span style='color:#000000;background:#c0caff;'>
+<strong>Feedback for all students:</strong>  
+The intercept may not always be practical in context (like here), but that sometimes happens when we build models.  
+</span>
+
+
+<font size = "2">
+
+<p style="color:#000000;background:#fdffcc;">
+<em><strong> Potential Feedback:</em></strong>  
+**Conceptual Errors**  
+- Missing "expected"; it is not true that the value is exact for all cases.  
+- Context of X and Y flipped, so this is not what the intercept measures  
+- Need to state the amount X is equal to for Y to be expected to be the intercept amount.  
+- This is not an interpretation of the full value of intercept  
+**Small Errors**  
+- Missing units  
+- You should always include context of the population  
+- You were also asked to explain whether this interpretation is practical.  
+</p>
+
+</font>
+
+
+
+
+### 1.11.
+
+What is the average brain size for a healthy adult with a head size of 3421 cm^3^? Show your work in a code chunk and write the answer below.
+
+*Inserted code chunk*
+```{r}
+#| label: head-3421cm3
+
+325.5734 + 0.2634*3421
+325.5734210 + (0.263429*3421)
+
+520.6101 + (2.4269*3421)
+
+```
+
+> 1226.665 grams (calculated from values rounded to 4 decimal places)   
+> 1226.764 grams (calculated from unrounded statistics)  
+
+
+
+### 1.12.
+
+One of the individuals in the data set has a brain weight of 1334 grams and a head size of 3903 cm^3^. Calculate the residual for the data point; show your work. What does that value mean for the brain weight, in context?  
+
+*Inserted code chunk*
+```{r}
+#| label: residual
+
+brain.yhat<-325.5734210 + (0.263429*3903)
+1334-brain.yhat
+
+1334-(325.5734210 + (0.263429*3903))
+
+
+
+1334-(325.5734 + (0.2634*3903))
+
+3903-(325.5734210 + (0.263429*1334))
+```
+
+> > -19.624 grams: the individual has a brain weight that is 19.624 grams lighter than expected  
+> (-19.737 grams from unrounded statistics)
+
+
+
+### 1.13.
+
+Does the linear model with head size explain much of the variability in brain weight of healthy adults? How much variability does it explain? Does that seem like a good model to use for predictions (evaluate the strength of the model fit)?   
+
+*Inserted code chunk*
+
+```{r}
+#| label: r-squared
+
+summary(brain.lm)$r.squared
+#summary(brain.lm)
+```
+
+
+> Coefficient of determination is `r summary(brain.lm)$r.squared`, so 0.6393 is the proportion of variability in brain weight that is explained by the linear model with head size for healthy adults. This is a moderately strong model fit, so it is a fairly good predictor of brain weight.
+
+
+<span style='color:#000000;background:#c0caff;'>
+<strong>Feedback for all students:</strong>  
+A high R2 value indicates the the explanatory is a good predictor of the response.  See page 9-12.  
+</span>
+
+
+<span style='color:#000000;background:#fdffcc;'>
+**LEGEND:**
+x: head size  
+y: brain weight  
+population: healthy adults  
+</span> 
+
+
+<font size = "2">
+<p style='color:#000000;background:#fcd283;'>
+**_5 POINTS:_**   
+**3.5 points: interpretation**   
+....3.5 points if altogether what R2 means  
+............proportion of variability in Y that is explained by linear model with X  
+............okay if written as % of variability...  
+....3 points if used adjusted R2 value  
+....2.5 points if missing R2 value  
+....2 points if used other R2 value or if their model built incorrectly to produce incorrect R2 values    
+....2 points MAX if have components but not a direct interpretation of R2    
+....1.5 points if missing "linear model" or "variability"     
+............okay if just "model", but comment  
+....1 point if missing Y or X part of statement  
+....1 points if flipped x & y    
+....1 points if missing "linear model" *and* "variability"  
+....0.5 points if multiple of the above issues    
+....0.5 points if write about correlation only (strong linear relationship)  
+**1.5 points: context of variables & population**  
+....1.5 points if full context of population & x,y (ok if no units).   
+............response: brain weight [(g)]    
+............explanatory: head size [(cm^3^)]    
+............population: healthy adults         
+....1 points < min on one part   
+....0.5 point if < min on more than one part  
+....0.5 point if missing full population  (healthy counts as part)     
+....0 points if missing more than one part  
+</p></font>
+
+<span style='color:#000000;background:#ffc0cb;'>
+<b>Other incorrect values</b>  
+adjusted R^2^ = 0.6378   
+OK if rounded to 3 decimals (0.639), not ok if rounded to 0.34  
+</span>
+
+<font size = "2">
+<p style='color:#000000;background:#fdffcc;'>
+<em><strong> Potential Feedback:</em></strong>  
+**Conceptual Errors**  
+- You first need to provide an R^2^ interpretation to answer the question completely. Review page 9-6 and practice on 9-7.  
+- You evaluated R^2^ only, you need to also interpret it. Review page 9-6 and the practice problem on 9-7.  
+- R^2^ is not correlation (r); it is a measure of effect of the linear model  
+- We use the multiple R^2^ for simple linear regression, not the adjusted  
+- Missing 'linear model' -- the variation that is explained specifically by the MODEL.  
+- Missing the linear model of WHAT  
+- The variation of *Y* is what is explained  
+- Missing the variables and context of what is being explained and with the model of what. Review 9-6 and 9-7.  
+- Need to include the context of the population  
+**Small Errors:**  
+- R2 value okay given the model you created.  
+- The designation of 0/0.3/0.7 of strength is for correlation, not coefficient of determination.  
+- If supply the proportion value of R^2^, add "the proportion of" to the description.  
+- Be sure to designate the model as a LINEAR model.   
+- You interpreted R^2^ only, you need to also evaluate it.  
+</p></font>
+
+
+
+## Scenario 2: Agricultural Intensity     
+
+<span style='color:#000000;background:#D8BFD8;'>
+<strong>Section checked for completeness.</strong><em>You are welcome to bring questions checked for completeness to office hours for individual feedback</em></span>
+
+Subsistence farming refers to small agricultural communities that consume most of their crop production. These farms use systems that are extensive, meaning they produce a relatively small amount of crops from a large parcel of land with minimum attention and expense. Naturally, extensive agricultural systems can’t support high population densities because of their relatively low production. Therefore, an increase in population is suspected to be a key factor that forces a shift from extensive to intensive systems of agriculture. The intensity of an agricultural system is defined by the frequency with which a parcel of land is cultivated or is fallow (unplanted) in a crop-fallow cycle. For example a 1 year crop and 0 year fallow cycle would have an agriculture intensity of 100%. While a 1 year crop and 1 year fallow would have an agricultural intensity of 50% and considered less intense than the former example. Researchers are interested in learning about the relationship between agricultural intensity and population density. They gathered data from randomly selected subsistence farms; they did not narrow their focus to farms of any particular crop, but did limit the subsistence farms to ones in tropical environments. In each of these locations, the agricultural intensity, population density and other variables were recorded. Here population density (in km^2^) is the ratio of the population to the total area available to it for farming. 
+You can find the data in `ag-intensity.csv`
+
+
+### 2.1.
+
+Name the response and explanatory variables of interest and, for each, state the type of variable (quantitative or qualitative).
+
+> Response:  Agricultural intensity (percent); quantitative  
+> Explanatory: Population density (km^2^); quantitative  
+
+
+### 2.2.
+
+**TRUE** or FALSE? We could generalize the results of this study to all tropical subsistence farms. Bold your answer.
+
+TRUE or **FALSE**? We could determine causality from the results of this study. Bold your answer. 
+
+
+### 2.3.
+
+Explanatory Data Analysis: Insert a code chunk below to create an appropriate graphic and calculate any appropriate summary statistics.
+
+*Inserted code chunk*
+```{r}
+#| label: ag-scatterplot-correlation
+
+ag <- read_csv("ag-intensity.csv", show_col_types = FALSE)
+
+gf_point(AgIntensity ~ PopDensity, data = ag, 
+         xlab = "Population Density (km^2)", 
+         ylab = "Agricultural Intensity (%) of Tropical Subsistence Farms")
+
+cor(AgIntensity ~ PopDensity, data = ag)
+```
+
+
+### 2.4.
+
+What is the simplest form (linear, nonlinear, etc) of the relationship between agricultural intensity and population density?
+
+> nonlinear; (perhaps exponential)
+
+### 2.5.
+
+Is it appropriate to interpret the calculated correlation coefficient or create a linear model for these data?
+
+> No; the relationship is not linear, so we should not use a linear model or a statistic describing the linear association (or we can consider a linear model only after transformation).
+
+> If students answered that the data is linear -- Yes; the data is linear, so we can use a linear model or a statistic describing the linear association
